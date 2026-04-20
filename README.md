@@ -35,7 +35,7 @@ Built a real-time automation pipeline that:
 
 2. **Data Extraction**
    - Reads buyer & seller data from Excel (Microsoft 365)
-
+![data](./asset/Interactive_map_data_image.png)
 3. **Data Transformation**
    - Cleans and standardizes fields (location, type, etc.)
    - Filters incomplete records
