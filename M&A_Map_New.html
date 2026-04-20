@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>M&A Interactive Map JAN 2026</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
+
+  <style>
+    body, html { margin:0; height:100%; }
+    #map { height:100vh; width:100%; }
+
+    .legend {
+      background: white;
+      padding: 6px 8px;
+      font: 14px/16px Arial, Helvetica, sans-serif;
+      box-shadow: 0 0 6px rgba(0,0,0,0.3);
+      border-radius: 4px;
+    }
+    .legend .row { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+    .legend .swatch { width:18px; height:28px; background-size:contain; background-repeat:no-repeat; }
+
+    .filter-control {
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.3);
+      font: 14px/16px Arial, Helvetica, sans-serif;
+    }
+
+    .custom-cluster-icon.marker-cluster-blue {
+      background: linear-gradient(rgba(0,123,255,0.5), rgba(0,123,255,0.8));
+      border-radius: 50%;
+      color: white;
+      text-align: center;
+      line-height: 40px;
+    }
+
+    .custom-cluster-icon.marker-cluster-green {
+      background: linear-gradient(rgba(40,167,69,0.5), rgba(40,167,69,0.8));
+      border-radius: 50%;
+      color: white;
+      text-align: center;
+      line-height: 40px;
+    }
+
+    .custom-cluster-icon.marker-cluster-orange {
+      background: linear-gradient(rgba(255,165,0,0.5), rgba(255,165,0,0.8));
+      border-radius: 50%;
+      color: white;
+      text-align: center;
+      line-height: 40px;
+
+    }
+    #loadingNote {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font: 13px/1.4 Arial, Helvetica, sans-serif;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      max-width: 280px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="loadingNote">
+    <strong>Loading live M&A market data…</strong><br>
+    Buyer and seller locations are fetched in real time via automation workflows.<br>
+    Please wait a few seconds for all points to appear.
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+  <script>
+    const map = L.map('map', { closePopupOnClick: false }).setView([27.8, -82.5], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const buyerIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    const sellerIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    const mixedClusters = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      chunkedLoading: true,
+      zoomToBoundsOnClick: false,
+      iconCreateFunction: function (cluster) {
+        const childMarkers = cluster.getAllChildMarkers();
+        const types = new Set(childMarkers.map(m => m.customData.type));
+
+        let className = 'custom-cluster-icon marker-cluster-orange';
+        if (types.size === 1) {
+          if (types.has('buyer')) className = 'custom-cluster-icon marker-cluster-blue';
+          if (types.has('seller')) className = 'custom-cluster-icon marker-cluster-green';
+        }
+
+        return L.divIcon({
+          html: `<div><span>${cluster.getChildCount()}</span></div>`,
+          className,
+          iconSize: [40, 40]
+        });
+      }
+    });
+
+   
+    mixedClusters.on('clusterclick', function (a) {
+      if (!a.layer._spiderfied) {
+        a.layer.spiderfy();
+        a.layer._spiderfied = true;
+      } else {
+        a.layer.unspiderfy();
+        a.layer._spiderfied = false;
+      }
+    });
+
+    mixedClusters.addTo(map);
+
+    const markers = [];
+
+    fetch("https://n8n.srv792828.hstgr.cloud/webhook/c0d09d1d-6833-4f61-974d-e613170efd6f")
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data)) return console.error("Webhook returned not-an-array:", data);
+
+        const allLatLngs = [];
+
+        data.forEach(item => {
+          if (!item.lat || !item.lng) return;
+
+          const lat = parseFloat(item.lat);
+          const lng = parseFloat(item.lng);
+          if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+          const type = String(item.type || '').toLowerCase();
+          const stage = item.stage || 'Unknown';
+
+          const icon = (type === 'seller') ? sellerIcon : buyerIcon;
+
+          const popupLines = [
+            `<b>${item.name || 'Unknown'}</b>`,
+            item.location || null,
+            item.type ? `Type: ${item.type}` : null,
+            item.ownership ? `Ownership: ${item.ownership}` : null,
+            item.type_of_book ? `Type of book looking for: ${item.type_of_book}` : null,
+            item.available_capital ? `Available capital to Invest: ${item.available_capital}` : null,
+            item.target_book_size ? `Target Book size: ${item.target_book_size}` : null,
+            item.asking_price ? `Asking Price: ${item.asking_price}` : null,
+            item.customer_language ? `Customer Language: ${item.customer_language}` : null,
+            item.deal_type ? `Deal Type: ${item.deal_type}` : null,
+            item.stage ? `Stage: ${item.stage}` : null,
+            item.years_of_experience ? `Years of experience: ${item.years_of_experience}` : null,
+            item.insurance_experience ? `Insurance experience: ${item.insurance_experience}` : null
+          ].filter(v => v).join('<br>');
+
+          const marker = L.marker([lat, lng], { icon }).bindPopup(popupLines);
+          marker.customData = { type, stage };
+
+          mixedClusters.addLayer(marker);
+          markers.push(marker);
+          allLatLngs.push([lat, lng]);
+        });
+
+        if (allLatLngs.length) {
+          map.fitBounds(L.latLngBounds(allLatLngs).pad(0.1));
+        }
+
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function () {
+          const div = L.DomUtil.create('div', 'legend');
+          div.innerHTML =
+            '<div class="row"><div class="swatch" style="background-image:url(https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png)"></div> Buyers</div>' +
+            '<div class="row"><div class="swatch" style="background-image:url(https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png)"></div> Sellers</div>';
+          return div;
+        };
+        legend.addTo(map);
+
+        const loadingNote = document.getElementById('loadingNote');
+        if (loadingNote) {
+          setTimeout(() => {
+            loadingNote.style.display = 'none';
+          }, 800);
+        }
+
+        const filterControl = L.control({ position: 'topright' });
+filterControl.onAdd = function () {
+  const div = L.DomUtil.create('div', 'filter-control');
+  div.innerHTML = `
+    <label><b>Type (Buyer / Seller):</b></label><br>
+    <select id="typeSelect">
+      <option value="all">All</option>
+      <option value="buyer">Buyer</option>
+      <option value="seller">Seller</option>
+    </select><br><br>
+
+    <label><b>Deal Stage:</b></label><br>
+    <select id="stageSelect">
+      <option value="all">All Stages</option>
+      <optgroup label="Buyer Stages">
+        <option value="highly motivated">Highly Motivated</option>
+        <option value="active">Active</option>
+        <option value="neutral">Neutral</option>
+        <option value="inactive">Inactive</option>
+        
+      </optgroup>
+      <optgroup label="Seller Stages">
+        <option value="LOI">LOI</option>
+        <option value="Pre-LOI">Pre-LOI</option>
+      </optgroup>
+    </select>
+  `;
+
+  div.querySelector('#typeSelect').addEventListener('change', applyFilter);
+  div.querySelector('#stageSelect').addEventListener('change', applyFilter);
+
+  return div;
+};
+
+        filterControl.addTo(map);
+
+        function applyFilter() {
+          const typeFilter = document.getElementById('typeSelect').value;
+          const stageFilter = document.getElementById('stageSelect').value;
+
+          mixedClusters.clearLayers();
+
+          markers.forEach(marker => {
+            const typeMatch = (typeFilter === 'all' || marker.customData.type === typeFilter);
+            const stageMatch = (stageFilter === 'all' || marker.customData.stage.toLowerCase() === stageFilter.toLowerCase());
+
+            if (typeMatch && stageMatch) {
+              mixedClusters.addLayer(marker);
+            }
+          });
+        }
+      })
+      .catch(err => console.error("Error fetching n8n data:", err));
+  </script>
+</body>
+</html>
