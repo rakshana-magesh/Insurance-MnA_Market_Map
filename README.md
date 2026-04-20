@@ -97,6 +97,13 @@ Built using **Leaflet.js** with advanced features:
 - Improved decision-making for M&A targeting
 - Reduced analysis time from hours → seconds
 
+## Future Enhancements
+
+- AI-based buyer-seller matching
+- Heatmaps for market demand
+- Predictive deal success scoring
+- Integration with CRM (Salesforce or GHL)
+
 ## Author
 
 Rakshana Magesh  
