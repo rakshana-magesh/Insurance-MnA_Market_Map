@@ -1,7 +1,7 @@
 # Real-Time M&A Buyer-Seller Mapping System (n8n + Webhooks + Leaflet)
 
-An end-to-end automated system that visualizes real-time buyer and seller distribution across the U.S. using workflow automation, geocoding APIs, and an interactive map interface.
-
+An automated system that visualizes real-time buyer and seller distribution across the U.S. using data pipeline, workflow automation, geocoding APIs, and an interactive map interface.
+![Map Preview](./asset/Interactive_map_image.png)
 
 ## Problem Statement
 
@@ -26,6 +26,7 @@ Built a real-time automation pipeline that:
 
 
 ## System Architecture
+![Map](./asset/Interactive_map_n8n.png)
 
 ### Workflow (n8n)
 
