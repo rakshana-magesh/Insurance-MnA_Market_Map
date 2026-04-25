@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Renegade Insurance- M&A Insurance Agency Map</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --buyer-hm: #1a6b4a;
+    --buyer-hm-light: #d4f0e3;
+    --buyer-ef: #1e4d8c;
+    --buyer-ef-light: #d6e7fb;
+    --buyer-pa: #7a3e9c;
+    --buyer-pa-light: #ecdff7;
+    --seller-loi: #c0392b;
+    --seller-loi-light: #fde8e6;
+    --seller-pre: #d97706;
+    --seller-pre-light: #fef3c7;
+    --bg: #f5f3ef;
+    --panel: #ffffff;
+    --ink: #1a1917;
+    --muted: #6b6760;
+    --border: #e0ddd8;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  header {
+    padding: 10px 20px;
+    background: var(--ink);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 18px; letter-spacing: 0.01em; }
+  header p { font-size: 11px; color: #a0998f; font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+  .legend {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 5px; font-size: 11px; color: #ccc; cursor: pointer; transition: opacity 0.2s; user-select: none;
+  }
+  .legend-item.muted { opacity: 0.35; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* MAP */
+  #map-wrap { flex: 1; position: relative; background: #e8e5e0; }
+  #map { width: 100%; height: 100%; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 320px; flex-shrink: 0; background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tab-btn {
+    flex: 1; padding: 10px 8px; font-size: 12px; font-weight: 500; cursor: pointer;
+    border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent;
+    transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .tab-content { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  .tab-content.active { display: flex; }
+
+  .search-box { padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .search-box input {
+    width: 100%; padding: 7px 10px; font-size: 12px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg); font-family: 'DM Sans', sans-serif; outline: none;
+  }
+  .search-box input:focus { border-color: #999; }
+
+  .list { overflow-y: auto; flex: 1; }
+  .list-item {
+    padding: 11px 14px; border-bottom: 1px solid var(--border); cursor: pointer;
+    transition: background 0.1s; position: relative;
+  }
+  .list-item:hover { background: #faf9f7; }
+  .list-item.selected { background: #f0ede8; }
+  .list-item .name { font-size: 13px; font-weight: 500; }
+  .list-item .city { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .list-item .tags { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+  .tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; font-family: 'DM Mono', monospace;
+  }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    position: absolute; bottom: 16px; left: 16px; width: 300px;
+    background: white; border-radius: 10px; box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+    padding: 16px; z-index: 100; border: 1px solid var(--border);
+    animation: slideUp 0.2s ease;
+    max-height: 60vh; overflow-y: auto;
+  }
+  @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .detail-panel .close-btn {
+    position: absolute; top: 10px; right: 12px; background: none; border: none;
+    font-size: 16px; cursor: pointer; color: var(--muted); line-height: 1;
+  }
+  .detail-panel h3 { font-size: 15px; font-weight: 600; padding-right: 20px; line-height: 1.3; }
+  .detail-panel .sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 3px; }
+  .detail-panel .divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .detail-row { display: flex; gap: 8px; margin-bottom: 7px; font-size: 12px; }
+  .detail-label { color: var(--muted); min-width: 90px; flex-shrink: 0; }
+  .detail-value { font-weight: 500; flex: 1; }
+
+  /* MATCH PANEL */
+  .match-header { padding: 10px 14px; background: #f5f3ef; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); flex-shrink: 0; }
+  .match-section-title { padding: 8px 14px 4px; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* FILTER BAR */
+  .filter-bar { padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+  .filter-chip {
+    font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.15s; background: white; font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+  .filter-chip.active { border-color: var(--ink); background: var(--ink); color: white; }
+
+  .stat-bar { padding: 8px 20px; background: var(--ink); display: flex; gap: 20px; flex-shrink: 0; border-top: 1px solid #333; }
+  .stat { font-size: 11px; color: #888; font-family: 'DM Mono', monospace; }
+  .stat span { color: white; font-weight: 500; }
+
+  .empty-state { padding: 30px 14px; text-align: center; color: var(--muted); font-size: 12px; }
+
+  /* LOADING OVERLAY */
+  #loading-overlay {
+    position: absolute; inset: 0; background: rgba(245,243,239,0.92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 500; gap: 14px;
+  }
+  .spinner {
+    width: 36px; height: 36px; border: 3px solid var(--border);
+    border-top-color: var(--ink); border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+
+  /* ERROR BANNER */
+  #error-banner {
+    display: none; position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: #c0392b; color: white; padding: 10px 18px; border-radius: 8px;
+    font-size: 12px; font-family: 'DM Mono', monospace; z-index: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2); max-width: 400px; text-align: center;
+  }
+
+  /* REFRESH BUTTON */
+  #refresh-btn {
+    font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid #555;
+    cursor: pointer; background: transparent; color: #ccc; font-family: 'DM Mono', monospace;
+    transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+  }
+  #refresh-btn:hover { border-color: white; color: white; }
+  #refresh-btn.spinning .refresh-icon { animation: spin 0.75s linear infinite; display: inline-block; }
+  .refresh-icon { display: inline-block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Renegade Insurance- M&A Agency Map</h1>
+    <p id="header-sub"> Buyer &amp; Seller Intelligence · Loading…</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div class="legend">
+      <div class="legend-item" data-filter="Highly Motivated Buyer" onclick="toggleFilter(this)">
+        <div class="legend-dot" style="background:#1a6b4a"></div> HM Buyer
+      </div>
+      <div class="legend-item" data-filter="Existing Franchisee" onclick="toggleFilter(this)">
+        <div class="legend-dot" style="background:#1e4d8c"></div> Franchisee
+      </div>
+      <div class="legend-item" data-filter="Platform Agency" onclick="toggleFilter(this)">
+        <div class="legend-dot" style="background:#7a3e9c"></div> Platform
+      </div>
+      <div class="legend-item" data-filter="LOI Signed" onclick="toggleFilter(this)">
+        <div class="legend-dot" style="background:#c0392b"></div> Seller LOI
+      </div>
+      <div class="legend-item" data-filter="Pre LOI" onclick="toggleFilter(this)">
+        <div class="legend-dot" style="background:#d97706"></div> Seller Pre-LOI
+      </div>
+    </div>
+    <button id="refresh-btn" onclick="loadData()" title="Refresh data from Excel">
+      <span class="refresh-icon">⟳</span> Refresh
+    </button>
+  </div>
+</header>
+
+<div class="main">
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Fetching live data…</div>
+    </div>
+    <div id="error-banner"></div>
+    <div id="detail-panel" class="detail-panel" style="display:none">
+      <button class="close-btn" onclick="closeDetail()">✕</button>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <button class="tab-btn active" id="tab-btn-buyers" onclick="switchTab('buyers', this)">Buyers (<span id="count-buyers">—</span>)</button>
+      <button class="tab-btn" id="tab-btn-sellers" onclick="switchTab('sellers', this)">Sellers (<span id="count-sellers">—</span>)</button>
+      <button class="tab-btn" onclick="switchTab('match', this)">Match</button>
+    </div>
+
+    <!-- BUYERS TAB -->
+    <div class="tab-content active" id="tab-buyers">
+      <div class="search-box"><input type="text" placeholder="Search buyers…" oninput="filterList('buyers')"></div>
+      <div class="filter-bar">
+        <div class="filter-chip active" data-kind="buyers" data-type="all">All</div>
+        <div class="filter-chip" data-kind="buyers" data-type="Highly Motivated Buyer">HM Buyer</div>
+        <div class="filter-chip" data-kind="buyers" data-type="Existing Franchisee">Franchisee</div>
+        <div class="filter-chip" data-kind="buyers" data-type="Platform Agency">Platform</div>
+      </div>
+      <div class="list" id="buyer-list"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <!-- SELLERS TAB -->
+    <div class="tab-content" id="tab-sellers">
+      <div class="search-box"><input type="text" placeholder="Search sellers…" oninput="filterList('sellers')"></div>
+      <div class="filter-bar">
+        <div class="filter-chip active" data-kind="sellers" data-type="all">All</div>
+        <div class="filter-chip" data-kind="sellers" data-type="LOI Signed">LOI Signed</div>
+        <div class="filter-chip" data-kind="sellers" data-type="Pre LOI">Pre LOI</div>
+        
+      </div>
+      <div class="list" id="seller-list"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <!-- MATCH TAB -->
+    <div class="tab-content" id="tab-match">
+      <div class="match-header">Select a seller to see nearby buyers</div>
+      <div id="match-content" class="list">
+        <div class="empty-state">Click any seller pin on the map<br>or select from the Sellers tab</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stat-bar">
+  <div class="stat">Buyers: <span id="s-buyers">—</span></div>
+  <div class="stat">Sellers: <span id="s-sellers">—</span></div>
+  <div class="stat">LOI Signed: <span id="s-loi">—</span></div>
+  <div class="stat">Pre-LOI: <span id="s-preloi">—</span></div>
+  <div class="stat" id="s-selected" style="color:#a0998f"></div>
+  <div class="stat" id="s-updated" style="margin-left:auto;color:#555"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  ⚙️  CONFIGURATION — update this URL to your n8n webhook
+// ─────────────────────────────────────────────
+const N8N_WEBHOOK_URL = 'https://n8n.srv792828.hstgr.cloud/webhook/fe920575-9a12-4df4-aabd-14f0adef4311';
+
+// ─────────────────────────────────────────────
+//  DATA STORE
+// ─────────────────────────────────────────────
+let BUYERS = [];
+let SELLERS = [];
+
+const typeColors = {
+  "Highly Motivated Buyer": {fill:"#1a6b4a", light:"#d4f0e3"},
+  "Existing Franchisee":    {fill:"#1e4d8c", light:"#d6e7fb"},
+  "Platform Agency":        {fill:"#7a3e9c", light:"#ecdff7"},
+  "LOI Signed":             {fill:"#c0392b", light:"#fde8e6"},
+  "Pre LOI":                {fill:"#d97706", light:"#fef3c7"},
+};
+
+let activeFilters = new Set();
+let activeListFilter = {buyers: 'all', sellers: 'all'};
+let selectedSeller = null;
+let markers = [];
+let map;
+
+// ─────────────────────────────────────────────
+//  MAP INIT
+// ─────────────────────────────────────────────
+function initMap() {
+  map = L.map('map', {zoomControl: true}).setView([27.8, -82.0], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors', maxZoom: 19
+  }).addTo(map);
+  setTimeout(() => map.invalidateSize(), 200);
+}
+
+// ─────────────────────────────────────────────
+//  DATA FETCH & TRANSFORM
+// ─────────────────────────────────────────────
+/**
+ * Transforms the raw n8n API item into the internal buyer/seller shape.
+ *
+ * Incoming fields from n8n Code2:
+ *   name, location, lat, lng, type,
+ *   ownership, type_of_book, asking_price, available_capital,
+ *   target_book_size, customer_language, deal_type, stage,
+ *   book_size, revenue, book_type,
+ *   office_or_employee_details, limitations, buyer_type
+ *
+ * Buyer/Seller split: raw.type contains "Seller" for sellers, else buyer.
+ * Buyer subtype comes from raw.buyer_type (e.g. "Highly Motivated Buyer").
+ * Seller stage comes from raw.stage (e.g. "LOI Signed", "Pre LOI").
+ */
+function transformItem(raw) {
+  // Parse city/state from "City, State, USA" or "City, USA"
+  const locParts = (raw.location || '').split(',').map(s => s.trim());
+  const city = locParts[0] || raw.location || '';
+  const stateCandidate = locParts[1] || '';
+  const state = stateCandidate.length <= 3 && stateCandidate !== 'USA' ? stateCandidate : '';
+
+  const isSeller = (raw.type || '').toLowerCase().includes('sell');
+
+  if (isSeller) {
+    return {
+      name:        raw.name                         || 'Unknown',
+      city,
+      state,
+      lat:         parseFloat(raw.lat)              || null,
+      lng:         parseFloat(raw.lng)              || null,
+      type:        'Seller',
+      // Stage: "LOI Signed" | "Pre LOI" | etc.
+      stage:       raw.stage                        || 'Pre LOI',
+      // Seller-specific fields
+      bookSize:    raw.book_size                    || '',
+      askingPrice: raw.asking_price                 || '',
+      revenue:     raw.revenue                      || '',
+      plCl:        raw.book_type                    || '',
+      employees:   raw.office_or_employee_details   || '',
+      limitations: raw.limitations                  || '',
+      dealType:    raw.deal_type                    || '',
+      ownership:   raw.ownership                    || '',
+    };
+  } else {
+    return {
+      name:       raw.name                          || 'Unknown',
+      city,
+      state,
+      lat:        parseFloat(raw.lat)               || null,
+      lng:        parseFloat(raw.lng)               || null,
+      type:       'Buyer',
+      // Buyer subtype: "Highly Motivated Buyer" | "Existing Franchisee" | "Platform Agency"
+      subtype:    raw.buyer_type                    || 'Highly Motivated Buyer',
+      // Buyer-specific fields
+      book:       raw.type_of_book                  || '',
+      capital:    raw.available_capital             || '',
+      targetBook: raw.target_book_size              || '',
+      language:   raw.customer_language             || '',
+      dealType:   raw.deal_type                     || '',
+      ownership:  raw.ownership                     || '',
+    };
+  }
+}
+
+async function loadData() {
+  setLoading(true);
+  hideError();
+
+  try {
+    const res = await fetch(N8N_WEBHOOK_URL, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+
+    const raw = await res.json();
+
+    // n8n respondToWebhook wraps items as array of { name, location, lat, … }
+    // or sometimes as array of { json: { … } } — handle both
+    const items = Array.isArray(raw)
+      ? raw.map(r => r.json ?? r)
+      : (raw.json ? [raw.json] : [raw]);
+
+    // Filter out items with no valid coordinates
+    const valid = items.filter(i => i.lat && i.lng && !isNaN(parseFloat(i.lat)));
+
+    BUYERS  = valid.filter(i => !(i.type || '').toLowerCase().includes('sell')).map(transformItem);
+    SELLERS = valid.filter(i =>  (i.type || '').toLowerCase().includes('sell')).map(transformItem);
+
+    // Clear existing markers
+    markers.forEach(({marker}) => marker.remove());
+    markers = [];
+
+    plotMarkers();
+    renderList('buyers');
+    renderList('sellers');
+    updateStats();
+    updateHeader();
+
+    setLoading(false);
+  } catch (err) {
+    setLoading(false);
+    showError(`Could not load data: ${err.message}. Check N8N_WEBHOOK_URL and that the workflow is active.`);
+    console.error('M&A Map fetch error:', err);
+  }
+}
+ 
+// ─────────────────────────────────────────────
+//  POPUP
+// ─────────────────────────────────────────────
+ function openPopupAtLocation(item, kind) {
+  if (!item.lat || !item.lng) return;
+
+  const row = (label, value) => value
+    ? `<div style="display:flex;gap:6px;margin-bottom:4px;font-size:12px">
+         <b style="min-width:100px">${label}</b>
+         <span>${value}</span>
+       </div>`
+    : '';
+
+  let html = '';
+
+  if (kind === 'buyer') {
+    html = `
+      <b>${item.name}</b><br>
+      <small>${[item.city, item.state].filter(Boolean).join(', ')}</small>
+      <hr>
+
+      ${row('Type', item.subtype)}
+      ${row('Book Interest', item.book)}
+      ${row('Capital', item.capital)}
+      ${row('Target Size', item.targetBook)}
+      ${row('Language', item.language)}
+      ${row('Deal Type', item.dealType)}
+      ${row('BDM', item.ownership)}
+    `;
+  } else {
+    html = `
+      <b>${item.name}</b><br>
+      <small>${[item.city, item.state].filter(Boolean).join(', ')}</small>
+      <hr>
+
+      ${row('Stage', item.stage)}
+      ${row('Book Size', item.bookSize)}
+      ${row('Revenue', item.revenue)}
+      ${row('Asking Price', item.askingPrice)}
+      ${row('Book Type', item.plCl)}
+      ${row('Employees', item.employees)}
+      ${row('Deal Type', item.dealType)}
+      ${row('BDM', item.ownership)}
+      ${row('Notes', item.limitations)}
+    `;
+  }
+
+  if (window.currentPopup) {
+    map.closePopup(window.currentPopup);
+  }
+
+  window.currentPopup = L.popup({ offset: [0, -10] })
+    .setLatLng([item.lat, item.lng])
+    .setContent(html)
+    .openOn(map);
+}
+// ─────────────────────────────────────────────
+//  MARKERS
+// ─────────────────────────────────────────────
+function plotMarkers() {
+  BUYERS.forEach((b, i) => {
+    if (!b.lat || !b.lng) return;
+
+    const c = typeColors[b.subtype] || { fill: '#888', light: '#eee' };
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:10px;height:10px;border-radius:50%;background:${c.fill};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`,
+      iconSize: [10, 10],
+      iconAnchor: [5, 5]
+    });
+
+    const m = L.marker([b.lat, b.lng], { icon }).addTo(map);
+
+    m.on('click', () => {
+      map.flyTo([b.lat, b.lng], 9);
+      openPopupAtLocation(b, 'buyer');
+      showDetail(b, 'buyer'); // keeps side panel
+    });
+
+    markers.push({ marker: m, data: b, kind: 'buyer', idx: i });
+  });
+
+  SELLERS.forEach((s, i) => {
+    if (!s.lat || !s.lng) return;
+
+    const c = typeColors[s.stage] || { fill: '#888' };
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:16px;height:16px;border-radius:3px;transform:rotate(45deg);background:${c.fill};border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.35)"></div>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+
+    const m = L.marker([s.lat, s.lng], { icon }).addTo(map);
+
+    m.on('click', () => {
+      map.flyTo([s.lat, s.lng], 9);
+      openPopupAtLocation(s, 'seller');
+      showDetail(s, 'seller'); // keeps side panel
+      selectSeller(s);         // keeps match logic
+    });
+
+    markers.push({ marker: m, data: s, kind: 'seller', idx: i });
+  });
+}
+
+// ─────────────────────────────────────────────
+//  UI HELPERS
+// ─────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('loading-overlay').style.display = on ? 'flex' : 'none';
+  const btn = document.getElementById('refresh-btn');
+  if (on) btn.classList.add('spinning'); else btn.classList.remove('spinning');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 8000);
+}
+function hideError() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+function updateStats() {
+  const loi    = SELLERS.filter(s => s.stage === 'LOI Signed').length;
+  const preloi = SELLERS.filter(s => s.stage === 'Pre LOI').length;
+  document.getElementById('s-buyers').textContent  = BUYERS.length;
+  document.getElementById('s-sellers').textContent = SELLERS.length;
+  document.getElementById('s-loi').textContent     = loi;
+  document.getElementById('s-preloi').textContent  = preloi;
+  document.getElementById('count-buyers').textContent  = BUYERS.length;
+  document.getElementById('count-sellers').textContent = SELLERS.length;
+  const now = new Date();
+  document.getElementById('s-updated').textContent = `Updated ${now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+}
+
+function updateHeader() {
+  const regions = [...new Set([...BUYERS, ...SELLERS].map(i => i.state).filter(Boolean))];
+  document.getElementById('header-sub').textContent =
+    `Insurance Agency Buyer & Seller Intelligence · ${regions.join(' · ') || 'Live Data'}`;
+}
+
+// ─────────────────────────────────────────────
+//  DETAIL PANEL
+// ─────────────────────────────────────────────
+function showDetail(item, kind) {
+  const panel   = document.getElementById('detail-panel');
+  const content = document.getElementById('detail-content');
+  panel.style.display = 'block';
+
+  const row = (label, value) => value
+    ? `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${value}</span></div>`
+    : '';
+
+  if (kind === 'buyer') {
+    const c = typeColors[item.subtype] || {fill:'#555', light:'#eee'};
+    content.innerHTML = `
+      <h3>${item.name}</h3>
+      <div class="sub">${[item.city, item.state].filter(Boolean).join(', ')}</div>
+      <span class="tag" style="background:${c.light};color:${c.fill};margin-top:6px;display:inline-block">${item.subtype}</span>
+      <hr class="divider">
+      ${row('Book interest', item.book)}
+      ${row('Capital',       item.capital)}
+      ${row('Target size',   item.targetBook)}
+      ${row('Language',      item.language)}
+      ${row('Deal type',     item.dealType)}
+      ${row('BDM',           item.ownership)}
+    `;
+  } else {
+    const c = typeColors[item.stage] || {fill:'#888', light:'#eee'};
+    const safeNameJs = item.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    content.innerHTML = `
+      <h3>${item.name}</h3>
+      <div class="sub">${[item.city, item.state].filter(Boolean).join(', ')}</div>
+      <span class="tag" style="background:${c.light};color:${c.fill};margin-top:6px;display:inline-block">${item.stage}</span>
+      <hr class="divider">
+      ${row('Book size',    item.bookSize)}
+      ${row('Revenue',      item.revenue)}
+      ${row('Asking price', item.askingPrice || 'TBD')}
+      ${row('Book type',    item.plCl)}
+      ${row('Staff / Office', item.employees)}
+      ${row('Deal type',    item.dealType)}
+      ${row('BDM',          item.ownership)}
+      ${row('Notes',        item.limitations)}
+      <hr class="divider">
+      <button onclick="selectSeller(SELLERS.find(s=>s.name==='${safeNameJs}'));switchTab('match',document.querySelectorAll('.tab-btn')[2])"
+        style="font-size:12px;padding:6px 12px;border:1px solid #ccc;border-radius:5px;cursor:pointer;background:#f5f3ef;width:100%;font-family:'DM Sans',sans-serif">
+        View nearby buyers →
+      </button>
+    `;
+    document.getElementById('s-selected').textContent = `Selected: ${item.name}`;
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').style.display = 'none';
+  document.getElementById('s-selected').textContent = '';
+}
+
+// ─────────────────────────────────────────────
+//  MATCH PANEL
+// ─────────────────────────────────────────────
+function selectSeller(seller) {
+  selectedSeller = seller;
+  renderMatchPanel(seller);
+}
+
+function dist(a, b) {
+  const R = 69;
+  const dlat = (a.lat - b.lat) * R;
+  const dlng = (a.lng - b.lng) * R * Math.cos(a.lat * Math.PI / 180);
+  return Math.sqrt(dlat*dlat + dlng*dlng);
+}
+
+function renderMatchPanel(seller) {
+  const mc = document.getElementById('match-content');
+  const nearby = BUYERS
+    .filter(b => b.lat && b.lng)
+    .map(b => ({...b, distance: dist(seller, b)}))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 20);
+
+  mc.innerHTML = `<div class="match-section-title">Seller: ${seller.name} — ${seller.city}</div>` +
+    nearby.map(b => {
+      const c = typeColors[b.subtype] || {fill:'#555', light:'#eee'};
+      const miles = Math.round(b.distance);
+      const safeNameJs = b.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<div class="list-item" onclick="showDetail(BUYERS.find(x=>x.name==='${safeNameJs}'),'buyer');map.panTo([${b.lat},${b.lng}])">
+        <div class="name">${b.name}</div>
+        <div class="city">${b.city} · ${miles} mi away</div>
+        <div class="tags">
+          <span class="tag" style="background:${c.light};color:${c.fill}">${b.subtype}</span>
+          ${b.book    ? `<span class="tag" style="background:#f0ede8;color:#555">${b.book}</span>`    : ''}
+          ${b.capital ? `<span class="tag" style="background:#f0ede8;color:#555">${b.capital}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  LISTS
+// ─────────────────────────────────────────────
+function renderList(kind) {
+  const items  = kind === 'buyers' ? BUYERS : SELLERS;
+  const listEl = document.getElementById(kind === 'buyers' ? 'buyer-list' : 'seller-list');
+  const search = (document.querySelector(`#tab-${kind} input`)?.value || '').toLowerCase();
+  const typeF  = activeListFilter[kind];
+
+  const filtered = items
+    .map((item, index) => ({ item, index })) // preserve original index
+    .filter(({ item }) => {
+      const matchSearch = item.name.toLowerCase().includes(search) || item.city.toLowerCase().includes(search);
+      const matchType   = typeF === 'all'
+        || (kind === 'buyers'  && item.subtype === typeF)
+        || (kind === 'sellers' && item.stage   === typeF);
+      return matchSearch && matchType;
+    });
+
+  if (kind === 'buyers') {
+    listEl.innerHTML =
+      filtered.map(({ item, index }) => {
+        const c = typeColors[item.subtype] || { fill:'#555', light:'#eee' };
+
+        return `<div class="list-item"
+          data-kind="buyer"
+          data-index="${index}">
+
+          <div class="name">${item.name}</div>
+          <div class="city">${[item.city, item.state].filter(Boolean).join(', ')}</div>
+          <div class="tags">
+            <span class="tag" style="background:${c.light};color:${c.fill}">${item.subtype}</span>
+            ${item.book    ? `<span class="tag">${item.book}</span>` : ''}
+            ${item.capital ? `<span class="tag">${item.capital}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('') || '<div class="empty-state">No results found</div>';
+
+  } else {
+    listEl.innerHTML =
+      filtered.map(({ item, index }) => {
+        const c = typeColors[item.stage] || { fill:'#888', light:'#eee' };
+
+        return `<div class="list-item"
+          data-kind="seller"
+          data-index="${index}">
+
+          <div class="name">${item.name}</div>
+          <div class="city">${[item.city, item.state].filter(Boolean).join(', ')}</div>
+          <div class="tags">
+            <span class="tag" style="background:${c.light};color:${c.fill}">${item.stage}</span>
+          </div>
+        </div>`;
+      }).join('') || '<div class="empty-state">No results found</div>';
+  }
+
+  attachListEvents(); 
+}
+// ─────────────────────────────────────────────
+//  Event handler
+// ─────────────────────────────────────────────
+ function attachListEvents() {
+  document.querySelectorAll('.list-item').forEach(el => {
+    el.onclick = () => {
+      const kind  = el.dataset.kind;
+      const index = parseInt(el.dataset.index);
+
+      const item = kind === 'buyer' ? BUYERS[index] : SELLERS[index];
+
+      if (!item || !item.lat) return;
+
+      map.flyTo([item.lat, item.lng], 9);
+
+      setTimeout(() => {
+        openPopupAtLocation(item, kind);
+      }, 300);
+
+      if (kind === 'seller') selectSeller(item);
+    };
+  });
+}
+ 
+// ─────────────────────────────────────────────
+// Active filters
+// ─────────────────────────────────────────────
+ 
+ function attachFilterEvents() {
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.onclick = () => {
+      const kind = chip.dataset.kind;
+      const type = chip.dataset.type;
+
+      // remove active from all chips in same section
+      document.querySelectorAll(`.filter-chip[data-kind="${kind}"]`)
+        .forEach(c => c.classList.remove('active'));
+
+      chip.classList.add('active');
+
+      activeListFilter[kind] = type;
+
+      renderList(kind);
+    };
+  });
+}
+ 
+// ─────────────────────────────────────────────
+//  TABS & LEGEND
+// ─────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if (name === 'match' && selectedSeller) renderMatchPanel(selectedSeller);
+}
+
+function toggleFilter(el) {
+  const f = el.dataset.filter;
+  if (activeFilters.has(f)) { activeFilters.delete(f); el.classList.remove('muted'); }
+  else { activeFilters.add(f); el.classList.add('muted'); }
+  markers.forEach(({marker, data}) => {
+    const key = data.type === 'Buyer' ? data.subtype : data.stage;
+    marker.setOpacity(activeFilters.has(key) ? 0 : 1);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────
+window.onload = () => {
+  initMap();
+  attachFilterEvents(); // 👈 ADD THIS
+  loadData();
+};
+</script>
+</body>
+</html>
