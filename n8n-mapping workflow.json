@@ -1,0 +1,284 @@
+{
+  "name": "BD Team-M&A Interactive-New Apr 23",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        864,
+        384
+      ],
+      "id": "a6ce5ccf-3ff2-4cb3-9d15-78b4a4e763b7",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "path": "fe920575-9a12-4df4-aabd-14f0adef4311",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        416
+      ],
+      "id": "1f0f711d-fe20-4f1b-a7ad-1586e417e4cc",
+      "name": "Webhook",
+      "webhookId": "fe920575-9a12-4df4-aabd-14f0adef4311"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1376,
+        384
+      ],
+      "id": "32a3dbe4-f745-4617-b442-59985368c3f3",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items\n  .map(it => {\n    const name = (it.json['Name'] || '').toString().trim();\n    const raw = (it.json['Target region'] || it.json['Location'] || '').toString().trim();\n    const type = (it.json['Type'] || '').toString().trim();\n    const ownership = (it.json['Ownership'] || '').toString().trim();\n\n    const typeOfBook = (it.json['Type of book looking for'] || '').toString().trim();\n    const availableCapital = (it.json['Available capital to Invest'] || '').toString().trim();\n    const targetBookSize = (it.json['Target Book size'] || '').toString().trim();\n\n    const customerLanguage = (it.json['Customer Language'] || '').toString().trim();\n    const dealType = (it.json['Deal Type'] || '').toString().trim();\n    const stage = (it.json['Stage'] || '').toString().trim();\n\n    // ✅ NEW FIELDS\n    const bookSize = (it.json['Book Size'] || '').toString().trim();\n    const revenue = (it.json['Revenue'] || '').toString().trim();\n    const askingPrice = (it.json['Asking Price'] || '').toString().trim();\n    const bookType = (it.json['Book Type'] || '').toString().trim();\n    const officeOrEmployeeDetails = (it.json['Office or Employee details'] || '').toString().trim();\n    const limitations = (it.json['Limitations'] || '').toString().trim();\n    const buyerType = (it.json['Buyer Type'] || '').toString().trim();\n\n    // Clean location\n    let loc = raw.split(/[\\/;|]/)[0].replace(/\\s+/g, ' ').trim();\n    if (loc && !/USA|United States/i.test(loc)) loc = loc + ', USA';\n\n    return {\n      json: {\n        name: name || null,\n        location: loc || null,\n        type: type || null,\n        ownership: ownership || null,\n\n        type_of_book: typeOfBook || null,\n        available_capital: availableCapital || null,\n        target_book_size: targetBookSize || null,\n\n        customer_language: customerLanguage || null,\n        deal_type: dealType || null,\n        stage: stage || null,\n\n        // ✅ new structured fields\n        book_size: bookSize || null,\n        revenue: revenue || null,\n        asking_price: askingPrice || null,\n        book_type: bookType || null,\n        office_or_employee_details: officeOrEmployeeDetails || null,\n        limitations: limitations || null,\n        buyer_type: buyerType || null\n      }\n    };\n  })\n  .filter(it => it.json.name && it.json.location && it.json.type);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        256
+      ],
+      "id": "dec8d7bf-e077-44ae-a2a1-7fd4dec2d7d2",
+      "name": "Reframe Field names"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.opencagedata.com/geocode/v1/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "key",
+              "value": "085222e153ee479bb03bad073cbb45fc"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        368,
+        -16
+      ],
+      "id": "21d34258-a731-4666-afd3-487b3538e56c",
+      "name": "Convert location to geocode"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const geo = item.json.results?.[0]?.geometry;\n  return {\n    json: {\n      name: item.json.name,\n      location: item.json.location,\n      lat: geo ? geo.lat : null,\n      lng: geo ? geo.lng : null,\n      type: item.json.type\n    }\n  }\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -16
+      ],
+      "id": "1701e2ee-dfb5-42ad-9178-99d509ce392a",
+      "name": "Split Latitute/Longitude"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ensure output is formatted for Leaflet + additional columns\nreturn items.map(item => {\n  return {\n    json: {\n      name: item.json.name || \"Unknown\",\n      location: item.json.location || \"N/A\",\n      lat: item.json.lat,\n      lng: item.json.lng,\n      type: item.json.type || \"unspecified\",\n      ownership: item.json.ownership || null,\n      type_of_book: item.json.type_of_book || null,\n      asking_price: item.json.asking_price || null,\n      available_capital: item.json.available_capital || null,\n      target_book_size: item.json.target_book_size || null,\n      customer_language: item.json.customer_language || null,\n      deal_type: item.json.deal_type || null,\n      stage: item.json.stage || null,\n      book_size: item.json.book_size || null,\n      revenue: item.json.revenue || null,\n      asking_price: item.json.asking_price || null,\n      book_type: item.json.book_type || null,\n      office_or_employee_details: item.json.office_or_employee_details || null,\n      limitations: item.json.limitations || null,\n      buyer_type: item.json.buyer_type || null\n    }\n  };\n});\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        384
+      ],
+      "id": "5efb3711-d9a4-4ea1-9d6a-9b45be9cc950",
+      "name": "Send Data to HTML"
+    },
+    {
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "readRows",
+        "workbook": {
+          "__rl": true,
+          "value": "01HFHYMLIT52GMNG6QF5F2TUM5TQWEGU3O",
+          "mode": "list",
+          "cachedResultName": "Final lead source list",
+          "cachedResultUrl": "https://joinsagecom-my.sharepoint.com/personal/amol_gupta_renegadeinsurance_com/_layouts/15/Doc.aspx?sourcedoc=%7BC68CEE13-D09B-4B2F-A9D1-9D9C2C43536E%7D&file=Final%20lead%20source%20list.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "{00000000-0001-0000-0000-000000000000}",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://joinsagecom-my.sharepoint.com/personal/amol_gupta_renegadeinsurance_com/_layouts/15/Doc.aspx?sourcedoc=%7BC68CEE13-D09B-4B2F-A9D1-9D9C2C43536E%7D&file=Final%20lead%20source%20list.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1&activeCell=Sheet1!A1"
+        },
+        "useRange": true,
+        "range": "A1:S200",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        368
+      ],
+      "id": "69496214-d225-40c3-afb7-f85bedbce294",
+      "name": "Get rows from sheet1",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "VIcYEAdZfUZvI3oU",
+          "name": "Microsoft Excel account 5"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -304
+      ],
+      "id": "4aa34514-8230-4494-b871-b4e61db4cc19",
+      "name": "When clicking ‘Execute workflow’",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send Data to HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get rows from sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook1": {
+      "main": [
+        []
+      ]
+    },
+    "Reframe Field names": {
+      "main": [
+        [
+          {
+            "node": "Convert location to geocode",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Convert location to geocode": {
+      "main": [
+        [
+          {
+            "node": "Split Latitute/Longitude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Latitute/Longitude": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Data to HTML": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get rows from sheet1": {
+      "main": [
+        [
+          {
+            "node": "Reframe Field names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "698ea68e-baa3-4c07-ad67-40aa2c978af3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fde5e7825dad982dd1d947115dc75a94cbc76882075ae0ae940b8e4f9fb5b573"
+  },
+  "id": "vtiAIP8JiwmjzkWZ",
+  "tags": []
+}
