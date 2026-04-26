@@ -1,6 +1,6 @@
 # Renegade Insurance – M&A Interactive Agency Map
 
-> **A real-time, no-code data pipeline that transforms raw Excel leads into a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States — with real-time filtering, matching, and deal-stage tracking.
+> **A real-time, no-code data pipeline that transforms raw Excel leads into a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States- with real-time filtering, matching, and deal-stage tracking.
 
 
 [![Live Demo]]
@@ -104,14 +104,14 @@ Each pin opens a detailed card showing:
 
 The automation has **6 nodes** running in sequence:
 
-### Node 1 — Webhook Trigger
+### Node 1: Webhook Trigger
 Listens for `GET` requests from the HTML frontend. Kicks off the entire pipeline on demand.
 
-### Node 2 — Microsoft Excel Reader
+### Node 2: Microsoft Excel Reader
 Reads rows `A1:S200` from `Final lead source list.xlsx` on SharePoint using OAuth2 authentication. Handles 19 columns across buyers and sellers.
 ![Data Preview](./asset/excel-data.png)
 
-### Node 3 — Field Normalizer (Code Node)
+### Node 3: Field Normalizer (Code Node)
 ```javascript
 // Maps messy Excel column names → clean camelCase JSON
 // Handles: Name, Target region, Type, Ownership,
@@ -121,13 +121,13 @@ Reads rows `A1:S200` from `Final lead source list.xlsx` on SharePoint using OAut
 // Filters out rows missing name, location, or type
 ```
 
-### Node 4 — OpenCage Geocoding
+### Node 4: OpenCage Geocoding
 Sends each `location` string to the OpenCage REST API → gets back `lat` / `lng` coordinates. Runs per-item (one API call per lead).
 
-### Node 5 — Merge Node
+### Node 5: Merge Node
 Combines the **geocoordinates stream** (lat/lng) with the **full data stream** (all fields) by position — reuniting the location data with the complete record.
 
-### Node 6 — Respond to Webhook
+### Node 6: Respond to Webhook
 Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
 
 ```json
