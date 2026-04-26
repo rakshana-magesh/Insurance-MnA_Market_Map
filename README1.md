@@ -1,26 +1,18 @@
 # Renegade Insurance – M&A Interactive Agency Map
 
-> **A real-time, no-code data pipeline that transforms raw Excel leads into a live, filterable geographic intelligence map — built to visualize and match insurance agency acquisition opportunities across the U.S.**
+> **A real-time, no-code data pipeline that transforms raw Excel leads into a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States — with real-time filtering, matching, and deal-stage tracking.
 
 
-**Live Demo:** 
-**Tech Stack:** JavaScript, HTML, CSS, Leaflet.js, n8n, Microsoft Excel API, OpenCage API  
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Map-2ea44f?style=for-the-badge)]
 
-
-
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Map-2ea44f?style=for-the-badge)](https://rakshana2025.github.io/New-Interactivemap/)
-
-## 🎯 What This Does
-
-This project powers the Business Development team at Renegade Insurance with a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States — with real-time filtering, matching, and deal-stage tracking.
 
 **The problem it solves:** The BD team maintained a growing Excel spreadsheet of 100+ agency buyers and sellers. Finding geographic matches, tracking deal stages, and sharing insights across the team was slow and manual.
 
-**The solution:** A fully automated pipeline that reads the spreadsheet, geocodes every location, and renders a live interactive map — refreshable in one click, no developer needed.
+**The solution:** A fully automated pipeline that reads the spreadsheet, geocodes every location, renders a live interactive map with the buyer/seller presence (with other deal information pop up) and matches sellers with top buyers based on proximity.
 
 ---
 
-## 🏗️ Architecture & Data Flow
+## Architecture & Data Flow
 
 ```
 ┌─────────────────────┐
@@ -61,19 +53,15 @@ This project powers the Business Development team at Renegade Insurance with a *
 
 ---
 
-## ✨ Features
+## Features
 
-### Map Intelligence
-- 📍 **96 Buyers** and **12 Sellers** plotted with color-coded, shape-coded markers
-- 🔴 **LOI Signed** sellers — distinct red diamond markers
-- 🟠 **Pre-LOI** sellers — orange diamond markers
-- 🔵 **Buyers** — circle markers color-coded by type (HM Buyer, Franchisee, Platform)
 
-### Filtering & Discovery
+- 📍 **Buyers** and **Sellers** plotted with color-coded, shape-coded markers
 - **Filter by buyer type:** Highly Motivated Buyer · Franchisee · Platform
-- **Search bar** to find any buyer/seller by name instantly
+- **Filter by Seller Stage:** Pre-LOI · LOI Signed
+- **Search bar** to find any buyer/seller by name or location instantly
 - **Match tab** — surface compatible buyer↔seller pairs by geography and book criteria
-- **Deal stage filters:** LOI Signed · Pre-LOI
+
 
 ### Rich Data Popups
 Each pin opens a detailed card showing:
@@ -110,13 +98,14 @@ Each pin opens a detailed card showing:
 
 ## ⚙️ n8n Workflow Deep Dive
 
+
 The automation has **6 nodes** running in sequence:
 
 ### Node 1 — Webhook Trigger
 Listens for `GET` requests from the HTML frontend. Kicks off the entire pipeline on demand.
 
 ### Node 2 — Microsoft Excel Reader
-Reads rows `A1:S200` from `Final lead source list.xlsx` on SharePoint using OAuth2 authentication. Handles 19 columns across buyers (rows 1–97) and sellers (rows 100–111).
+Reads rows `A1:S200` from `Final lead source list.xlsx` on SharePoint using OAuth2 authentication. Handles 19 columns across buyers and sellers.
 
 ### Node 3 — Field Normalizer (Code Node)
 ```javascript
