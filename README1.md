@@ -3,7 +3,7 @@
 > **A real-time, no-code data pipeline that transforms raw Excel leads into a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States — with real-time filtering, matching, and deal-stage tracking.
 
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Map-2ea44f?style=for-the-badge)]
+[![Live Demo]]
  Map View | Buyer/Seller Detail Popup |
 |----------|-------------------|
 | ![Map Overview](./asset/map-preview.png) | Seller- Popup shows Stage, Book Size, Revenue, Asking Price, Employees |
@@ -176,6 +176,7 @@ Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
 
 ## Author
 
-**Rakshana Magesh**
+Rakshana Magesh  
+Business Operations Associate @Renegade Insurance
 
 ---
