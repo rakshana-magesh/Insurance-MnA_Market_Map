@@ -4,6 +4,9 @@
 
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Map-2ea44f?style=for-the-badge)]
+ Map View | Buyer/Seller Detail Popup |
+|----------|-------------------|
+| ![Map Overview](map-preview.png) | Popup shows Stage, Book Size, Revenue, Asking Price, Employees |
 
 
 **The problem it solves:** The BD team maintained a growing Excel spreadsheet of 100+ agency buyers and sellers. Finding geographic matches, tracking deal stages, and sharing insights across the team was slow and manual.
@@ -97,7 +100,7 @@ Each pin opens a detailed card showing:
 ---
 
 ## ⚙️ n8n Workflow Deep Dive
-![Data Preview](./asset/excel-data.png)
+![Workflow Architecture](./asset/workflow-architecture.png)
 
 The automation has **6 nodes** running in sequence:
 
@@ -145,7 +148,13 @@ Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
   }
 ]
 ```
+## 📊 Business Impact
 
+- **Reduced lookup time** from 20+ minutes (manual Excel search) to under 5 seconds
+- **Enabled geographic matching** — instantly see which sellers are in a buyer's target region
+- **Zero infrastructure cost** — GitHub Pages (free) + n8n + existing Microsoft 365 subscription
+- **Non-technical users** can update the map by just editing the Excel file
+- **Scales to 200 records** in the current config; adjustable to any range
 ---
 
 ## 🚀 Setup & Replication
@@ -189,20 +198,14 @@ Open your GitHub Pages URL — the map auto-fetches live data.
 
 ---
 
-## 📊 Business Impact
-
-- **Reduced lookup time** from 20+ minutes (manual Excel search) to under 5 seconds
-- **Enabled geographic matching** — instantly see which sellers are in a buyer's target region
-- **Zero infrastructure cost** — GitHub Pages (free) + n8n + existing Microsoft 365 subscription
-- **Non-technical users** can update the map by just editing the Excel file
-- **Scales to 200 records** in the current config; adjustable to any range
-
----
-
 ## 🗂️ Repository Structure
 
 ```
 📁 your-repo/
+├──asset
+   ├──map-preview.png
+   ├──excel-data.png
+   ├──workflow.architecure.png
 ├── 📄 M_A_map.html           # Complete frontend — Leaflet map + UI
 ├── 📄 n8n-mapping_workflow.json  # Importable n8n automation workflow
 └── 📄 README.md              # This file
@@ -210,13 +213,6 @@ Open your GitHub Pages URL — the map auto-fetches live data.
 
 ---
 
-## 📸 Screenshots
-
-| Map View | Seller Detail Popup |
-|----------|-------------------|
-| ![Map Overview](map-preview-1.png) | Popup shows Stage, Book Size, Revenue, Asking Price, Employees |
-
----
 
 ## 🤝 About This Project
 
