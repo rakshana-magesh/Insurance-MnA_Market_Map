@@ -1,119 +1,183 @@
-# Real-Time M&A Buyer-Seller Mapping System
-🗺️ **[View Live Map](https://rakshana-magesh.github.io/insurance-mna-market-map/)**
-![Map Preview](./asset/map-preview.png)
+# Renegade Insurance – M&A Interactive Agency Map
 
-A real-time market intelligence system that transforms raw M&A data into an interactive geospatial decision tool for visualizing buyer and seller distribution across the U.S.
-
-## Problem Statement
-
-The Business Development team lacked a centralized, visual way to understand:
-
-- Where buyers and sellers are located geographically
-- Market density and clustering
-- Deal stage distribution across regions
-
-Data existed in Excel, but decision-making was slow, manual, and lacked spatial insights.
+> **A real-time, no-code data pipeline that transforms raw Excel leads into a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States- with real-time filtering, matching, and deal-stage tracking.
 
 
-## Solution Overview
+[![Live Demo]]
+ Map View | Buyer/Seller Detail Popup |
+|----------|-------------------|
+| ![Map Overview](./asset/map-preview.png) | Seller- Popup shows Stage, Book Size, Revenue, Asking Price, Employees |
+| ![Map Overview](./asset/map-preview-1.png) | Buyer- Popup shows Buyer type, Capital, Target book size, Language, Deal type and assigned BDM  |
 
-Built a real-time automation pipeline that:
+**The problem it solves:** The BD team maintained a growing Excel spreadsheet of 100+ agency buyers and sellers. Finding geographic matches, tracking deal stages, and sharing insights across the team was slow and manual.
 
-- Extracts buyer & seller data from Excel (Microsoft 365)
-- Cleans and standardizes location data
-- Converts locations into geocoordinates using a geocoding API
-- Serves processed data via webhook
-- Dynamically renders an interactive map using Leaflet.js
+**The solution:** A fully automated pipeline that reads the spreadsheet, geocodes every location, renders a live interactive map with the buyer/seller presence (with other deal information pop up) and matches sellers with top buyers based on proximity.
+
+---
+
+## Architecture & Data Flow
+
+```
+┌─────────────────────┐
+│  Microsoft Excel    │  ← BD team updates this spreadsheet
+│  (SharePoint/OneDrive) │
+└────────┬────────────┘
+         │ n8n reads via Microsoft Excel node (OAuth2)
+         ▼
+┌─────────────────────┐
+│   n8n Workflow      │
+│  ┌───────────────┐  │
+│  │ Webhook Trigger│  │  ← HTML map calls this on page load / refresh
+│  └──────┬────────┘  │
+│         │           │
+│  ┌──────▼────────┐  │
+│  │ Field Mapping │  │  ← Normalizes 19 raw columns → clean JSON schema
+│  └──────┬────────┘  │
+│         │           │
+│  ┌──────▼────────┐  │
+│  │ OpenCage API  │  │  ← Converts city/state text → lat/lng coordinates
+│  └──────┬────────┘  │
+│         │           │
+│  ┌──────▼────────┐  │
+│  │  Merge Node   │  │  ← Combines geocoords + all original fields
+│  └──────┬────────┘  │
+│         │           │
+│  ┌──────▼────────┐  │
+│  │ Format Output │  │  ← Structures final JSON payload for the frontend
+│  └──────┬────────┘  │
+└─────────┼───────────┘
+          │ JSON response (CORS-enabled)
+          ▼
+┌─────────────────────┐
+│  Interactive HTML   │  ← Leaflet.js map, hosted on GitHub Pages
+│  Map (Leaflet.js)   │  ← No backend, no database, no server costs
+└─────────────────────┘
+```
+
+---
+
+## Features
 
 
-## System Architecture
-![Workflow Architecture](./asset/workflow-architecture.png)
+- 📍 **Buyers** and **Sellers** plotted with color-coded, shape-coded markers
+- **Filter by buyer type:** Highly Motivated Buyer · Franchisee · Platform
+- **Filter by Seller Stage:** Pre-LOI · LOI Signed
+- **Search bar** to find any buyer/seller by name or location instantly
+- **Match tab** — surface compatible buyer↔seller pairs by geography and book criteria
 
-### Workflow (n8n)
 
-1. **Webhook Trigger**
-   - Initiates workflow when the HTML map loads
+### Rich Data Popups
+Each pin opens a detailed card showing:
+| Field | Example |
+|-------|---------|
+| Name & Location | William "Bill" Coates — Cocoa, FL |
+| Stage | Pre LOI |
+| Book Size | 7–8 Mil |
+| Revenue | ~$2M revenue; >$1M profit |
+| Asking Price | NA |
+| Book Type | 100% Specialty – Marine & Aviation |
+| Employees | Owner (age 76) + 2 part-time staff |
+| Notes / Limitations | Specialized |
 
-2. **Data Extraction**
-   - Reads buyer & seller data from Excel (Microsoft 365)
-![Data Preview](./asset/excel-data.png)
-3. **Data Transformation**
-   - Cleans and standardizes fields (location, type, etc.)
-   - Filters incomplete records
+### Live Refresh
+- One-click **Refresh** button re-fetches the latest spreadsheet data
+- Status bar shows live counts: `Buyers: 96 · Sellers: 12 · LOI Signed: 4 · Pre-LOI: 8`
+- No deployment needed when the Excel sheet changes
 
-4. **Geocoding**
-   - Converts location → latitude & longitude using API
-
-5. **Data Structuring**
-   - Formats output for frontend consumption
-
-6. **Webhook Response**
-   - Sends processed JSON data to frontend
-
-## Frontend (Interactive Map)
-
-Built using **Leaflet.js** with advanced features:
-
-- 📍 Buyer & Seller markers (color-coded)
-- 🔵 Blue → Buyers  
-- 🟢 Green → Sellers  
-- 🟠 Orange → Mixed clusters  
-
-- 📊 Marker clustering for dense regions
-- 🕸 Spiderfy behavior on cluster click
-- 🎯 Smart filtering:
-  - By Type (Buyer/Seller)
-  - By Deal Stage
-
-- 📌 Rich popups with:
-  - Name, location
-  - Capital, book size, deal type
-  - Experience & ownership details
-
-- ⚡ Real-time data fetch via webhook
-
-## End-to-End Flow
-
-Excel Data → n8n Workflow → Geocoding API → Webhook → Interactive Map (Leaflet)
-
-This pipeline ensures real-time synchronization between backend data and frontend visualization.
-
-## Key Insight
-
-This system bridges the gap between raw operational data and strategic decision-making by converting static Excel datasets into a live, interactive market view.
-
-It enables business teams to:
-- Identify high-density deal regions instantly
-- Spot buyer-seller overlaps
-- Make faster, data-driven M&A decisions
+---
 
 ## Tech Stack
 
-- **Automation**: n8n  
-- **Data Source**: Microsoft Excel 365  
-- **APIs**: Geocoding API (OpenCage)  
-- **Frontend**: HTML, JavaScript  
-- **Mapping Library**: Leaflet.js  
-- **Data Transfer**: Webhooks (JSON)
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Data Source** | Microsoft Excel (SharePoint) | Source of truth — BD team edits this |
+| **Automation** | [n8n](https://n8n.io/) | No-code workflow orchestration |
+| **Geocoding** | [OpenCage Geocoding API](https://opencagedata.com/) | City/State → lat/lng conversion |
+| **Frontend** | [Leaflet.js](https://leafletjs.com/) | Interactive map rendering |
+| **Hosting** | GitHub Pages | Free, zero-maintenance hosting |
+| **Transport** | Webhook (REST/JSON) | Real-time data bridge between n8n and HTML |
 
+---
 
-## Key Features
+## n8n Workflow Deep Dive
+![Workflow Architecture](./asset/workflow-architecture.png)
 
-- Real-time data pipeline from Excel → Map
-- Automated geolocation processing
-- Interactive visualization with clustering logic
-- Dynamic filtering for better decision-making
-- Scalable architecture for additional data layers
+The automation has **6 nodes** running in sequence:
 
-## Impact
+### Node 1: Webhook Trigger
+Listens for `GET` requests from the HTML frontend. Kicks off the entire pipeline on demand.
 
-- Eliminated manual geographic analysis
-- Enabled instant visualization of market distribution
-- Improved decision-making for M&A targeting
-- Reduced analysis time from hours → seconds
+### Node 2: Microsoft Excel Reader
+Reads rows `A1:S200` from `Final lead source list.xlsx` on SharePoint using OAuth2 authentication. Handles 19 columns across buyers and sellers.
+![Data Preview](./asset/excel-data.png)
+
+### Node 3: Field Normalizer (Code Node)
+```javascript
+// Maps messy Excel column names → clean camelCase JSON
+// Handles: Name, Target region, Type, Ownership,
+//          Book Size, Revenue, Asking Price, Book Type,
+//          Office/Employee details, Limitations, Buyer Type...
+// Also: cleans location strings, appends ", USA" for geocoding accuracy
+// Filters out rows missing name, location, or type
+```
+
+### Node 4: OpenCage Geocoding
+Sends each `location` string to the OpenCage REST API → gets back `lat` / `lng` coordinates. Runs per-item (one API call per lead).
+
+### Node 5: Merge Node
+Combines the **geocoordinates stream** (lat/lng) with the **full data stream** (all fields) by position — reuniting the location data with the complete record.
+
+### Node 6: Respond to Webhook
+Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
+
+```json
+[
+  {
+    "name": "William \"Bill\" Coates",
+    "location": "Cocoa, FL, USA",
+    "lat": 28.3861,
+    "lng": -80.7425,
+    "type": "Seller",
+    "stage": "Pre LOI",
+    "book_size": "7-8 Mil",
+    "revenue": "~$2 Mil revenue; >$1M profit",
+    "asking_price": "NA",
+    "book_type": "100% Specialty – Marine & Aviation",
+    "office_or_employee_details": "Owner (age 76) + 2 part-time staff...",
+    "limitations": "Specialized"
+  }
+]
+```
+## Business Impact
+
+- **Reduced lookup time** from 20+ minutes (manual Excel search) to under 5 seconds
+- **Reduced manual matching effort** by ~90%  
+- **Enabled geographic matching** — instantly see which sellers are in a buyer's target region
+- **Built-in matching engine** —  instant identification of high-probability proximity based matches
+- **Non-technical users** can update the map by just editing the Excel file
+- **Scales to 200 records** in the current config; adjustable to any range
+
+---
+
+##  Repository Structure
+
+```
+📁 your-repo/
+├──asset
+   ├──map-preview.png
+   ├──map-preview-1.png
+   ├──excel-data.png
+   ├──workflow.architecure.png
+├── 📄 M_A_map.html           # Complete frontend — Leaflet map + UI
+├── 📄 n8n-mapping_workflow.json  # Importable n8n automation workflow
+└── 📄 README.md              # This file
+```
+
+---
 
 ## Author
 
 Rakshana Magesh  
 Business Operations Associate @Renegade Insurance
 
+---
