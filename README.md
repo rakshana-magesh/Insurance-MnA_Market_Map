@@ -1,6 +1,6 @@
 # Renegade Insurance – M&A Interactive Agency Map
 
-> **A real-time, no-code data pipeline that transforms raw Excel leads into a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States- with real-time filtering, matching, and deal-stage tracking.
+> A real-time, no-code data pipeline that transforms raw Excel leads into a **live M&A (Mergers & Acquisitions) intelligence map** that shows insurance agency buyers and sellers across the United States- with real-time filtering, matching, and deal-stage tracking.
 
 
 [![Live Demo]]
