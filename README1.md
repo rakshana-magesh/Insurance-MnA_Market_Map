@@ -151,12 +151,13 @@ Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
 ## Business Impact
 
 - **Reduced lookup time** from 20+ minutes (manual Excel search) to under 5 seconds
+- **Reduced manual matching effort** by ~90%  
 - **Enabled geographic matching** — instantly see which sellers are in a buyer's target region
-- **Zero infrastructure cost** — GitHub Pages (free) + n8n + existing Microsoft 365 subscription
+- **Built-in matching engine** —  instant identification of high-probability proximity based matches
 - **Non-technical users** can update the map by just editing the Excel file
 - **Scales to 200 records** in the current config; adjustable to any range
----
 
+---
 
 ##  Repository Structure
 
