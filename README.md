@@ -162,7 +162,7 @@ Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
 ##  Repository Structure
 
 ```
-📁 your-repo/
+📁 insurance-mna-market-map/
 ├──asset
    ├──map-preview.png
    ├──map-preview-1.png
