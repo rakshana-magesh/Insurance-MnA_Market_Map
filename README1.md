@@ -97,7 +97,7 @@ Each pin opens a detailed card showing:
 ---
 
 ## ⚙️ n8n Workflow Deep Dive
-
+![Data Preview](./asset/excel-data.png)
 
 The automation has **6 nodes** running in sequence:
 
@@ -106,6 +106,7 @@ Listens for `GET` requests from the HTML frontend. Kicks off the entire pipeline
 
 ### Node 2 — Microsoft Excel Reader
 Reads rows `A1:S200` from `Final lead source list.xlsx` on SharePoint using OAuth2 authentication. Handles 19 columns across buyers and sellers.
+![Data Preview](./asset/excel-data.png)
 
 ### Node 3 — Field Normalizer (Code Node)
 ```javascript
