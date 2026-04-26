@@ -6,8 +6,8 @@
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Map-2ea44f?style=for-the-badge)]
  Map View | Buyer/Seller Detail Popup |
 |----------|-------------------|
-| ![Map Overview](map-preview.png) | Popup shows Stage, Book Size, Revenue, Asking Price, Employees |
-
+| ![Map Overview](./asset/map-preview.png) | Seller- Popup shows Stage, Book Size, Revenue, Asking Price, Employees |
+| ![Map Overview](./asset/map-preview-1.png) | Buyer- Popup shows Buyer type, Capital, Target book size, Language, Deal type and assigned BDM  |
 
 **The problem it solves:** The BD team maintained a growing Excel spreadsheet of 100+ agency buyers and sellers. Finding geographic matches, tracking deal stages, and sharing insights across the team was slow and manual.
 
@@ -86,7 +86,7 @@ Each pin opens a detailed card showing:
 
 ---
 
-## 🔧 Tech Stack
+## Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -99,7 +99,7 @@ Each pin opens a detailed card showing:
 
 ---
 
-## ⚙️ n8n Workflow Deep Dive
+## n8n Workflow Deep Dive
 ![Workflow Architecture](./asset/workflow-architecture.png)
 
 The automation has **6 nodes** running in sequence:
@@ -148,7 +148,7 @@ Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
   }
 ]
 ```
-## 📊 Business Impact
+## Business Impact
 
 - **Reduced lookup time** from 20+ minutes (manual Excel search) to under 5 seconds
 - **Enabled geographic matching** — instantly see which sellers are in a buyer's target region
@@ -157,66 +157,20 @@ Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
 - **Scales to 200 records** in the current config; adjustable to any range
 ---
 
-## 🚀 Setup & Replication
 
-### Prerequisites
-- n8n instance (cloud or self-hosted)
-- Microsoft 365 account with Excel file on SharePoint/OneDrive
-- [OpenCage API key](https://opencagedata.com/api) (free tier: 2,500 req/day)
-- GitHub account (for Pages hosting)
-
-### Steps
-
-**1. Import the n8n Workflow**
-```
-Import `n8n-mapping_workflow.json` into your n8n instance
-```
-
-**2. Connect Credentials**
-- Add your **Microsoft Excel OAuth2** credentials in n8n
-- Replace the OpenCage API key in the HTTP Request node
-
-**3. Update the Webhook URL**
-Copy your n8n webhook URL and update the `fetch()` call in the HTML file:
-```javascript
-const res = await fetch('https://your-n8n-instance.com/webhook/YOUR-ID');
-```
-
-**4. Deploy HTML to GitHub Pages**
-```bash
-git init
-git add M_A_map.html
-git commit -m "Initial map deployment"
-git branch -M main
-git remote add origin https://github.com/yourusername/your-repo.git
-git push -u origin main
-# Enable GitHub Pages in repo Settings → Pages → Deploy from main branch
-```
-
-**5. Refresh and Done ✅**
-Open your GitHub Pages URL — the map auto-fetches live data.
-
----
-
-## 🗂️ Repository Structure
+##  Repository Structure
 
 ```
 📁 your-repo/
 ├──asset
    ├──map-preview.png
+   ├──map-preview-1.png
    ├──excel-data.png
    ├──workflow.architecure.png
 ├── 📄 M_A_map.html           # Complete frontend — Leaflet map + UI
 ├── 📄 n8n-mapping_workflow.json  # Importable n8n automation workflow
 └── 📄 README.md              # This file
 ```
-
----
-
-
-## 🤝 About This Project
-
-Built for the **Business Development team at Renegade Insurance** to support M&A strategy across the US insurance agency market. The project connects a non-technical sales workflow (Excel) to a visual intelligence layer — demonstrating how automation and lightweight frontend tooling can replace expensive BI software.
 
 ---
 
