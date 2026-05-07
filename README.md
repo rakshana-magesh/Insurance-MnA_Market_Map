@@ -9,9 +9,9 @@
 | ![Map Overview](./asset/map-preview.png) | Seller- Popup shows Stage, Book Size, Revenue, Asking Price, Employees |
 | ![Map Overview](./asset/map-preview-1.png) | Buyer- Popup shows Buyer type, Capital, Target book size, Language, Deal type and assigned BDM  |
 
-**The problem it solves:** The BD team maintained a growing Excel spreadsheet of 100+ agency buyers and sellers. Finding geographic matches, tracking deal stages, and sharing insights across the team was slow and manual.
+**The Problem :** The BD team maintained a growing Excel spreadsheet of 100+ agency buyers and sellers. Finding geographic matches, tracking deal stages, and sharing insights across the team was slow and manual.
 
-**The solution:** A fully automated pipeline that reads the spreadsheet, geocodes every location, renders a live interactive map with the buyer/seller presence (with other deal information pop up) and matches sellers with top buyers based on proximity.
+**The Solution:** A fully automated pipeline that reads the spreadsheet, geocodes every location, renders a live interactive map with the buyer/seller presence (with other deal information pop up) and matches sellers with top buyers based on proximity.
 
 ---
 
@@ -70,7 +70,7 @@
 Each pin opens a detailed card showing:
 | Field | Example |
 |-------|---------|
-| Name & Location | William "Bill" Coates — Cocoa, FL |
+| Name & Location | William "Bill" Coates - Cocoa, FL |
 | Stage | Pre LOI |
 | Book Size | 7–8 Mil |
 | Revenue | ~$2M revenue; >$1M profit |
