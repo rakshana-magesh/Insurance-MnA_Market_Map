@@ -62,7 +62,7 @@
 - **Filter by buyer type:** Highly Motivated Buyer · Franchisee · Platform
 - **Filter by Seller Stage:** Pre-LOI · LOI Signed
 - **Search bar** to find any buyer/seller by name or location instantly
-- **Match tab** — surface compatible buyer↔seller pairs by geography and book criteria
+- **Match tab** - surface compatible buyer↔seller pairs by geography and book criteria
 
 
 ### Rich Data Popups
@@ -151,8 +151,8 @@ Returns a CORS-enabled JSON array of all processed records to the HTML frontend.
 
 - **Reduced lookup time** from 20+ minutes (manual Excel search) to under 5 seconds
 - **Reduced manual matching effort** by ~90%  
-- **Enabled geographic matching** — instantly see which sellers are in a buyer's target region
-- **Built-in matching engine** —  instant identification of high-probability proximity based matches
+- **Enabled geographic matching** - instantly see which sellers are in a buyer's target region
+- **Built-in matching engine** -  instant identification of high-probability proximity based matches
 - **Non-technical users** can update the map by just editing the Excel file
 - **Scales to 200 records** in the current config; adjustable to any range
 
